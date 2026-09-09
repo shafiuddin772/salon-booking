@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -45,7 +46,19 @@ public class BookingServiceImpl implements BookingService {
         int totalPrice=serviceDTOSet.stream()
                 .mapToInt(ServiceDTO::getPrice)
                 .sum();
-        return null;
+
+        Set<Long>idList=serviceDTOSet.stream()
+                .map(ServiceDTO::getId)
+                .collect(Collectors.toSet());
+        Booking newBooking=new Booking();
+        newBooking.setCustomerId(user.getId());
+        newBooking.setSalonId(salon.getId());
+        newBooking.setServiceIds(idList);
+        newBooking.setStatus(BookingStatus.PENDING);
+        newBooking.setStartTime(bookingStartTime);
+        newBooking.setEndTime(bookingEndTime);
+        newBooking.setTotalPrice(totalPrice);
+        return bookingRepository.save(newBooking);
     }
 
 
@@ -83,31 +96,72 @@ throw  new Exception("slot not avilable, choose different time");
 
     @Override
     public List<Booking> getBookingsByCustomer(Long customerId) {
-        return List.of();
+       return bookingRepository.findByCustomerId(customerId);
     }
 
     @Override
     public List<Booking> getBookingsBySalon(Long salonId) {
-        return List.of();
+        return bookingRepository.findBySalonId(salonId);
     }
 
     @Override
-    public Booking getBookingById(Long id) {
-        return null;
+    public Booking getBookingById(Long id) throws Exception {
+        Booking booking=bookingRepository.findById(id).orElse(null);
+        if(booking==null){
+            throw new Exception("Booking not found");
+        }
+        return booking;
     }
 
     @Override
-    public Booking updateBooking(Long bookingId, BookingStatus status) {
-        return null;
+    public Booking updateBooking(Long bookingId, BookingStatus status) throws Exception {
+        Booking booking=getBookingById(bookingId);
+        booking.setStatus(status);
+        return bookingRepository.save(booking);
     }
 
     @Override
     public List<Booking> getBookingByDate(LocalDate date, Long salonId) {
-        return List.of();
+       List<Booking>allBookings=getBookingsBySalon(salonId);
+       if(date==null){
+           return allBookings;
+       }
+       return allBookings.stream()
+               .filter(booking -> isSameDate(booking.getStartTime(),date) || isSameDate(booking.getEndTime(),date)).collect(Collectors.toList());
+
     }
+
+    private boolean isSameDate(LocalDateTime dateTime, LocalDate date) {
+return dateTime.toLocalDate().isEqual(date);
+    }
+
 
     @Override
     public SalonReport getSalonReport(Long salonId) {
-        return null;
+        List<Booking>bookings=getBookingsBySalon(salonId);
+      int totalEarnings=bookings.stream()
+                .mapToInt(Booking::getTotalPrice)
+                .sum();
+
+      Integer totalBooking=bookings.size();
+      List<Booking>cancelledBookings=bookings.stream()
+              .filter(booking -> booking.getStatus().equals(BookingStatus.CANCELLED))
+              .collect(Collectors.toList());
+
+      Double totalRefund=cancelledBookings.stream()
+              .mapToDouble(Booking::getTotalPrice)
+              .sum();
+
+      SalonReport report=new SalonReport();
+      report.setSalonId(salonId);
+      report.setCancelledBooking(cancelledBookings.size());
+      report.setTotalBookings(totalEarnings);
+      report.setTotalEarnings(totalEarnings);
+      report.setTotalRefund(totalRefund);
+      report.setTotalBookings(totalBooking);
+
+
+    return report;
+
     }
 }

@@ -16,7 +16,7 @@ public class Booking {
 
     private Long  salonId;
 
-    private Long customId;
+    private Long customerId;
 
     private LocalDateTime startTime;
 
@@ -27,5 +27,5 @@ public class Booking {
 
     public BookingStatus status=BookingStatus.PENDING;
 
-    private int totalServices;
+    private int totalPrice;
 }

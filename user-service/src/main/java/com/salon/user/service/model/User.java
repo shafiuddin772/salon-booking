@@ -1,5 +1,6 @@
 package com.salon.user.service.model;
 
+import com.salon.user.service.domain.UserRole;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -38,7 +39,7 @@ public class User {
     private String phone;
 
     @NotBlank(message = "role is mandatory")
-    private String role;
+    private UserRole role;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

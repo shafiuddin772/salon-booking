@@ -1,0 +1,340 @@
+
+  services:
+
+    # =========================================================
+    # USER DATABASE
+    # =========================================================
+
+    userdb:
+      image: mysql:8.0
+      container_name: userdb
+      ports:
+        - "3303:3306"
+
+      environment:
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: userdb
+
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+        start_period: 10s
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # CATEGORY DATABASE
+    # =========================================================
+
+    categorydb:
+      image: mysql:8.0
+      container_name: categorydb
+      ports:
+        - "3301:3306"
+
+      environment:
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: categorydb
+
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+        start_period: 10s
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # BOOKING DATABASE
+    # =========================================================
+
+    bookingdb:
+      image: mysql:8.0
+      container_name: bookingdb
+      ports:
+        - "3302:3306"
+
+      environment:
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: bookingdb
+
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+        start_period: 10s
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # SALON DATABASE
+    # =========================================================
+
+    salondb:
+      image: mysql:8.0
+      container_name: salondb
+      ports:
+        - "3304:3306"
+
+      environment:
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: salondb
+
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+        start_period: 10s
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # SERVICE OFFERING DATABASE
+    # =========================================================
+
+    service-offeringdb:
+      image: mysql:8.0
+      container_name: service-offeringdb
+      ports:
+        - "5004:5004"
+
+      environment:
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: service_offeringdb
+
+      healthcheck:
+        test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+        start_period: 10s
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # EUREKA SERVER
+    # =========================================================
+
+    eurekaserver:
+      image: "shafiuddinnn/salon-eurekaserver:v1"
+      container_name: eurekaserver
+
+      ports:
+        - "8070:8070"
+
+      healthcheck:
+        test:
+          [
+            "CMD-SHELL",
+            "curl --fail --silent http://localhost:8070/actuator/health | grep UP || exit 1"
+          ]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+        start_period: 10s
+
+      deploy:
+        resources:
+          limits:
+            memory: 700m
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # USER SERVICE
+    # =========================================================
+
+    user:
+      image: "shafiuddinnn/salon-user:v1"
+      container_name: user
+
+      ports:
+        - "5001:5001"
+
+      depends_on:
+        userdb:
+          condition: service_healthy
+
+        eurekaserver:
+          condition: service_healthy
+
+      environment:
+        SPRING_APPLICATION_NAME: "user-service"
+
+        SPRING_DATASOURCE_URL: "jdbc:mysql://userdb:3306/userdb"
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
+
+        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
+
+      deploy:
+        resources:
+          limits:
+            memory: 700m
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # BOOKING SERVICE
+    # =========================================================
+
+    booking:
+      image: "shafiuddinnn/salon-booking:v1"
+      container_name: booking
+
+      ports:
+        - "5005:5005"
+
+      depends_on:
+        bookingdb:
+          condition: service_healthy
+
+        eurekaserver:
+          condition: service_healthy
+
+      environment:
+        SPRING_APPLICATION_NAME: "booking-service"
+
+        SPRING_DATASOURCE_URL: "jdbc:mysql://bookingdb:3306/bookingdb"
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
+
+        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
+
+      deploy:
+        resources:
+          limits:
+            memory: 700m
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # SALON SERVICE
+    # =========================================================
+
+    salon:
+      image: "shafiuddinnn/salon-salon:v1"
+      container_name: salon
+
+      ports:
+        - "5002:5002"
+
+      depends_on:
+        salondb:
+          condition: service_healthy
+
+        eurekaserver:
+          condition: service_healthy
+
+      environment:
+        SPRING_APPLICATION_NAME: "salon-service"
+
+        SPRING_DATASOURCE_URL: "jdbc:mysql://salondb:3306/salondb"
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
+
+        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
+
+      deploy:
+        resources:
+          limits:
+            memory: 700m
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # SERVICE OFFERING
+    # =========================================================
+
+    service-offering:
+      image: "shafiuddinnn/salon-service-offering:v1"
+      container_name: service-offering
+
+      ports:
+        - "5003:5003"
+
+      depends_on:
+        service-offeringdb:
+          condition: service_healthy
+
+        eurekaserver:
+          condition: service_healthy
+
+      environment:
+        SPRING_APPLICATION_NAME: "service-offering"
+
+        SPRING_DATASOURCE_URL: "jdbc:mysql://service-offeringdb:3306/service_offeringdb"
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: root
+
+        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
+
+      deploy:
+        resources:
+          limits:
+            memory: 700m
+
+      networks:
+        - zosh
+
+
+    # =========================================================
+    # GATEWAY SERVER
+    # =========================================================
+
+    gatewayserver:
+      image: "shafiuddinnn/salon-gateway:v1"
+      container_name: gatewayserver
+
+      ports:
+        - "5000:5000"
+
+      depends_on:
+        eurekaserver:
+          condition: service_healthy
+
+      environment:
+        SPRING_APPLICATION_NAME: "gateway-server"
+
+        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
+
+      deploy:
+        resources:
+          limits:
+            memory: 700m
+
+      networks:
+        - zosh
+
+
+  # =========================================================
+  # NETWORK
+  # =========================================================
+
+  networks:
+    zosh:
+      driver: bridge
+

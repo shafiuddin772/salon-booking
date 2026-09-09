@@ -20,8 +20,8 @@ public interface BookingService {
                           Set<ServiceDTO>serviceDTOSet) throws Exception;
     List<Booking>getBookingsByCustomer(Long customerId);
     List<Booking>getBookingsBySalon(Long salonId);
-    Booking getBookingById(Long id);
-    Booking updateBooking(Long bookingId, BookingStatus status);
+    Booking getBookingById(Long id) throws Exception;
+    Booking updateBooking(Long bookingId, BookingStatus status) throws Exception;
     List<Booking>getBookingByDate(LocalDate date,Long salonId);
     SalonReport getSalonReport(Long salonId);
 }
